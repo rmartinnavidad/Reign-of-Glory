@@ -1,0 +1,258 @@
+Rope rig script versions
+========================
+
+v001_4Point_Restore
+- Restores the original four-point top-rope curves.
+- Removes the abandoned flex-point empties, drivers, and loop-causing hooks.
+- Preserves the fixed-length and inward-sag rig.
+
+v002_PositiveX_TautMidpoints
+- Starts from v001.
+- Keeps CTRL_Rope Point_TR_E_mid and CTRL_Rope Point_TR_N_mid near baseline
+  during positive local-X lifting of the southwest master empty.
+- Caps upward midpoint lift at 0.04 m.
+- Preserves the stronger downward sag response.
+- Passed compile, positive/negative travel sampling, and 180-move stress tests.
+
+v003_Straight_Upward_EndTangents
+- Starts from v002.
+- Keeps the original four-point top-rope curves.
+- During upward master movement, aligns CTRL_Rope Point_TR_S_end_l_ctrl and
+  CTRL_Rope Point_TR_E_end_l_ctrl with the live midpoint-to-endpoint angle.
+- Preserves the captured tangent layout when the master is at rest.
+- At a 150-inch lift, both endpoint tangent dot products measured 1.000000.
+- Passed compile and 180-move stability tests.
+
+v004_Upward_Midpoint_Tilt
+- Starts from v003.
+- Keeps CTRL_Rope Point_TR_E_mid and CTRL_Rope Point_TR_N_mid unchanged at
+  baseline, then gradually tilts their hooked Bezier handles during positive
+  local-X lifting.
+- Uses each midpoint's local +Y rope-tangent axis and its matching end_l target.
+- At a 150-inch lift, midpoint tangent alignment measured 0.99924 east and
+  0.99874 north.
+- Does not add curve points or change the fixed rope lengths.
+- Passed compile and 180-move stability tests.
+
+v005_PositiveX_Midpoint_XYZ_Props
+- Starts from v004.
+- Adds six custom properties to CTRL_Ring_Hardware_Turnbuckle_Jaw_Post_TR_S_W:
+  Positive X North Mid X/Y/Z and Positive X East Mid X/Y/Z.
+- Each value is an XYZ offset that fades in over the first 0.25 m of positive
+  local-X travel and has zero effect at the untouched baseline.
+- Existing property values are preserved when the script is rerun.
+- Verified independent XYZ response within 0.0000002 m, zero baseline drift,
+  valid driver expressions, and 180-move stability.
+
+v006_All_TR_XYZ_Tuning
+- Starts from v005.
+- Exposes 72 positive-X XYZ properties for 24 user-facing top-rope controls:
+  curve points, Mid IK controls, and turnbuckle-pad controls.
+- Excludes technical WRAP, Snap Target, and helper empties.
+- Every value is additive, fades in over the first 0.25 m of positive local-X
+  travel, and remains inactive at the baseline pose.
+- South/west midpoint tuning is integrated into the fixed-length equations;
+  north/east midpoint tuning remains integrated into their recoil equations.
+- Rerunning preserves all tuning values and refreshes the Blender Text report
+  SW_TR_Positive_X_Tuning_Values.json for easy sharing.
+- Verified all 24 controls/72 properties, zero baseline drift, valid drivers,
+  exact independent XYZ response, and 180-move stability.
+
+v007_TR_XYZ_Rotation_Export
+- Starts from v006 and preserves every previously entered position value.
+- Adds local rotation X/Y/Z tuning for all 24 top-rope controls (72 new angle
+  properties, 144 position/rotation properties total).
+- Rotation is additive, independently constrained, and has zero influence at
+  the calibrated baseline pose.
+- Adds 3D View sidebar > Rope Tuning with grouped position and rotation fields.
+- Adds Export Current X150 Values, which writes a timestamped JSON file to
+  Downloads containing all 24 position values, rotations in radians/degrees,
+  master world position, and measured positive local-X travel.
+- Rerunning remains idempotent and preserves both position and rotation values.
+- Verified 24 controls/144 properties, zero baseline influence, valid rotation
+  drivers, JSON export, rerun preservation, and 180-move stability.
+
+v008_X150_Tension_Math
+- Rebuilt directly from untouched v006; no v007 rotation/UI code is included.
+- Preloads the 72 artist-approved TR position values exported at master X150.
+- Treats X150 (150 inches / 3.81 m) as the full positive-X response endpoint.
+  X75 applies exactly 50%; X150 applies 100%; values clamp beyond X150.
+- Replaces v006's premature 0.25 m / 9.84 in tuning saturation while keeping
+  its nonlinear fixed-length south/west sag equations and inward response.
+- Existing properties remain preserved on rerun; exported defaults are used
+  only when a property is absent in a fresh/pre-script scene.
+- Compact driver expressions remain within Blender's 255-character limit.
+- Verified all 72 defaults, baseline zero influence, X75/X150 interpolation,
+  driver validity, rerun preservation, and 180-move stability.
+
+v009_Named_Rotation_Offsets
+- Starts from the validated v008 X150 tension math.
+- Renames every user-facing property with the exact target Empty name.
+- Migrates existing v008 values into the new names before removing legacy
+  label-based properties; later hand edits remain preserved.
+- Gives each of the 24 top-rope controls four independent XYZ groups:
+  X150 Location, X150 Rotation, Offset Location, and Offset Rotation.
+- X150 Location/Rotation interpolate from 0% at X0 to 100% at X150.
+- Offset Location/Rotation are constant non-destructive local-space layers,
+  allowing adjustment without changing an Empty's authored transform fields.
+- Rotation properties display as angles while Blender stores radians.
+- Verified 288 exact-name properties, migration, X75/X150 rotation response,
+  baseline offsets, unchanged base transforms, valid drivers, rerun safety,
+  and 180-move stability with no runtime callbacks.
+
+v010_BakedMath_Tweaks_MasterOffsets
+- Corrects v009's property model by rebuilding from validated v008.
+- The artist-approved X150 values are baked into the response math and are no
+  longer exposed as property defaults.
+- Every target Empty receives exact-name Tweak Loc and Tweak Rot XYZ fields;
+  all tweaks default to zero and add only corrections to the baked behavior.
+- Only CTRL_Ring_Hardware_Turnbuckle_Jaw_Post_TR_S_W receives Off Loc and
+  Off Rot XYZ fields. Off Loc uses the master's local axes and distance units.
+- Master offsets drive its stored default transform: entering zero restores
+  the exact default location/rotation without editing Transform-panel values.
+- Cleans v009's mistaken X150/target-offset properties and constraints safely.
+- Verified X150 reproduction from Off Loc X=150 inches, exact zero reset,
+  zero tweak defaults, rotation offsets, rerun safety, v009 migration, valid
+  drivers, and 180 property-driven movement tests with no runtime callbacks.
+
+v011_Responsive_Props
+- Fixes the v010 regression where target tweaks were multiplied by the X150
+  travel weight and therefore appeared nonfunctional at the default pose.
+- Keeps the approved X150 relationship baked into the rig while making every
+  exact-name Tweak Loc/Rot field an immediate additive correction at any pose.
+- Removes the failed technical proxy experiment and its dependency cycle; no
+  additional Empty remains in the scene.
+- Master Off Loc/Rot fields directly drive the one southwest master control;
+  zero still restores the stored default transform exactly.
+- Adds a tiny 0.03-second property-change poll because Blender does not dirty
+  transforms when raw ID properties are edited. It reads only the exposed
+  numbers, does no mesh/rope simulation work, and tags controls only on change.
+- Verified through Blender's custom-property UI operator: Off Loc X=150 inches
+  recreates the approved pose, zero resets, master rotation responds, target
+  location/rotation tweaks respond, and all installed drivers remain valid.
+
+v012_Cascadeur_ControlBone
+- Replaces the user-facing southwest top-turnbuckle master Empty with an
+  exportable deform bone named CTRL_Ring_Hardware_Turnbuckle_Jaw_Post_TR_S_W
+  in BONES_Turnbuckles, so the same transform control can travel through FBX.
+- Parents TB_TR_S_W_ROOT to the new control bone while preserving the current
+  world pose of the root, foam, body, jaws, eyehook, and descendant hardware.
+- Transfers all 183 current custom properties with their UI metadata to the
+  pose bone and retargets 363 driver property inputs to that bone.
+- Preserves the validated v011 X150 tension math, zero reset, named target
+  tweaks, master location/rotation offsets, and fixed rope-length projection.
+- Retains one hidden technical request-source object only for compatibility
+  with the existing rope equations; it is not a user control or export joint.
+- Avoids an armature dependency cycle by updating the turnbuckle pad through
+  its stored rigid offset rather than constraining it back into the armature.
+- Supports both property-driven movement and direct Pose Mode manipulation of
+  the new control bone, including rotations, without changing the default pose.
+- Rerunning is idempotent and does not create another control, bone, or Empty.
+- Headless Blender 5.0 verification passed: no visible migration jump, X150,
+  zero reset, rotation, target tweaks, valid drivers, direct Pose movement,
+  preserved hardware, and safe second run.
+- SHA256: 49D63B56B0309F1886F12400BCFDE144B152C30CA6ABAF82BD4A9B3F86B01539
+
+v013_BoneFacingUp
+- Preserves the complete validated v012 control-bone migration and behavior.
+- Gives CTRL_Ring_Hardware_Turnbuckle_Jaw_Post_TR_S_W a dedicated lightweight
+  octahedral display shape scaled uniformly to 4.5 and rotated +90 degrees on
+  X, so the selectable control faces upward and is substantially easier to see.
+- Applies the size and rotation only to the pose bone's display shape. The
+  export bone's rest matrix, hardware hierarchy, rope equations, and evaluated
+  transforms are unchanged, preventing the display adjustment from twisting
+  or deforming the ropes.
+- The reusable display mesh is hidden, non-selectable, and non-rendering; a
+  rerun reuses it instead of creating duplicates.
+- Headless Blender 5.0 verification passed: 4.5 scale, +90-degree display X,
+  zero rig movement, X150, offsets, rotations, tweaks, all 363 driver inputs,
+  direct Pose Mode movement, and safe second run.
+- SHA256: 2AE6FC09E7F2D342CF74A76667854067770F65763A17EBD1D1393EDCEAA821F3
+
+v014_Hybrid_Empty_Bone_LowLag
+- Restores CTRL_Ring_Hardware_Turnbuckle_Jaw_Post_TR_S_W as the fast live
+  Empty master while retaining the same-named deform bone for export.
+- Removes the export bone from the live turnbuckle/root dependency chain. The
+  bone is now a one-way leaf follower of the Empty, preventing bone movement
+  from forcing an additional armature solve during ordinary rope control.
+- Restores every live rope/property driver to the Empty; no live SINGLE_PROP
+  driver reads the export pose bone.
+- Mirrors all Empty custom properties and UI metadata to the export bone only
+  when values change. Changing the Empty therefore updates the bone copy while
+  the bone remains dependency-free for responsive viewport manipulation.
+- Unlocks the Empty's Location and Rotation channels for direct grabbing. The
+  zero-based Off Loc/Rot fields remain functional and write their calculated
+  transforms only when those properties are edited.
+- Parents TB_TR_S_W_FOAM directly to TB_TR_S_W_BODY with its existing mounting
+  offset preserved, removing the extra Child Of evaluation and preventing the
+  foam bone from floating away during unit motion.
+- Empty and export bone remain coincident through a one-way Copy Transforms;
+  the upright 4.5x bone display from v013 is preserved.
+- Verified as an upgrade from v013: zero initial rig jump, direct Empty drag,
+  offset property movement, bone/property mirroring, rope endpoint response,
+  fixed foam/body relative transform, valid Empty-driven drivers, and rerun.
+- SHA256: 5C723ABED6969FEC252BFB1BF0BD2E0B9A74824A3688923D763D982787581E8D
+
+v015_Subdivide_SW_Top_Curves
+- Preserves the complete v014 hybrid Empty/bone rope rig.
+- On ROPE_SOUTH_TOP_CURVE and ROPE_WEST_TOP_CURVE, selects every existing
+  Bezier control except the final endpoint and runs Blender's native Edit Mode
+  Subdivide operator exactly twice (one cut per pass).
+- Adds no modifiers, helper objects, controls, or generated replacement curves.
+- Each requested curve changes from 4 to 10 controls while its visible path,
+  object transform, and deliberately excluded final endpoint remain unchanged.
+- Stores the original four control/handle records and marks the completed
+  result, making reruns deterministic: an already completed 10-point curve is
+  preserved instead of being subdivided again.
+- Headless Blender 5.0 verification passed for both curves, path preservation,
+  endpoint preservation, unchanged modifier stacks, required rope objects, and
+  a second run in the same session (10 -> 10 with identical coordinates).
+- SHA256: 4709CE45FEF56837683CCC84637D08869F24BE63B8C089C46733C60BF55B59A6
+
+v016_Subdivide_SW_Top_Curves_HookSafe
+- Corrects the visible X-offset deformation found when comparing v015 with
+  v014 at the master Empty's 50-inch X offset.
+- Keeps the same requested native two-pass subdivision: South and West top
+  curves remain 10-point Bezier splines with their final controls excluded.
+- Remaps the four original Hook modifiers from old control indices 0,1,2,3 to
+  their post-subdivision indices 0,4,8,9. The six inserted controls remain
+  unhooked interpolation points instead of stealing the original Hook targets.
+- Verified at the exact 50-inch offset: every original evaluated South/West
+  control matches v014 within 0.00002 Blender units, and a second v016 run is
+  coordinate-identical with no additional subdivision.
+- SHA256: 571FEE73EFDE12DE5E8DACA8819DA7B2E4132D18E74F22DD39264BE8250333DC
+
+v017_Subdivide_SW_Top_Curves_BlendedHooks
+- Supersedes v016 after the live X50 screenshot showed that correcting only
+  the four original Hook indices still left the six inserted controls behind.
+- Keeps the original controls on indices 0,4,8,9 and gives every inserted
+  control complementary influence from the two neighboring original Hooks.
+- Uses only the existing rig targets: no new Empty, bone, or subdivision
+  modifier is created. Lightweight Hook bindings move each inserted control
+  and both of its Bezier handles together.
+- At the 50-inch positive-X pull, South and West inserted controls remain
+  within 0.0042 Blender units of their straight segment instead of producing
+  the large stationary-point zigzag seen in v015/v016.
+- Verified with the rig installed at neutral and then pulled to X50, followed
+  by a second-run test confirming 10->10 points, identical coordinates, and
+  exactly twelve nonduplicated inserted-point bindings per curve.
+- SHA256: 6E37393BF38409D0BDCFAE2A93D7B492F5E3238D9F52E2D4B11DEBBCE4A44B2B
+
+v018_CanvasSafe_Cable
+- Corrected after the first analytical implementation replaced the working
+  v017 Hook response. All South/West top-curve point drivers from that attempt
+  are removed and every v017 Hook is restored and enabled.
+- CTRL_Ring_Hardware_Turnbuckle_Jaw_Post_TR_S_W therefore retains the exact
+  established eyehook/end-control path: both rope endpoints continue copying
+  the rope-side eyehook and the West tangent continues following the Pad IK.
+- Adds canvas safety only after the working deformation. Each evaluated
+  South/West curve is resampled to 64 points and clamped above the canvas,
+  producing a smooth flexible cable path while preserving both endpoints.
+- Removes the failed final-mesh flattening modifier; collision correction now
+  happens on the driving curves so the rope cross-section remains coherent.
+- Adds no new Empty, bone, point-coordinate driver, cloth solver, or runtime
+  frame handler. The script completes cleanly in Blender 5.0.
+- Blender 5.0 compatibility run completed cleanly with both v017 Hook stacks
+  active and both 64-point cable modifiers installed.
+- SHA256: 6941C710D8CAC6CE462A11C3971EB5EDA539DEEAF19A1043F6114F2541CF2D39
+
